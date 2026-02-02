@@ -42,6 +42,7 @@ build/
 ### Arquivos de dados ###
 *.csv
 *.zip
+/dados_brutos
 
 ### Compilados do java ###
 *.class

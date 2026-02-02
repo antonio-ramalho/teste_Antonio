@@ -2,51 +2,101 @@ package org.projeto.application;
 
 import org.projeto.entities.Operadora;
 import org.projeto.exceptions.DomainException;
+import org.projeto.services.ProcessarApi;
 import org.projeto.services.ProcessarZip;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.net.http.HttpClient;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.projeto.services.ServicoLog.servicoLog;
 
 public class Program {
     public static void main(String[] args) {
+        HttpClient client = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .build();
 
-        String[] caminhos = new String[3];
-        String[] caminhosFinais = new String[2];
-        caminhosFinais[0] = "consolidado_despesas.zip";
-        caminhosFinais[1] = "Teste_antonio.zip";
+        String[] vectApi = new String[2];
+        vectApi[0] = "https://dadosabertos.ans.gov.br/FTP/PDA/demonstracoes_contabeis/2025/";
+        vectApi[1] = "https://dadosabertos.ans.gov.br/FTP/PDA/operadoras_de_plano_de_saude_ativas/";
 
-        caminhos[0] = "C:\\temp\\1T2025.csv";
-        caminhos[1] = "C:\\temp\\2T2025.csv";
-        caminhos[2] = "C:\\temp\\3T2025.csv";
+        System.out.println("Processando API...");
+        for (String s : vectApi) {
+            ProcessarApi processarApi = new ProcessarApi(s, client);
+            if (s.equals(vectApi[1])) {
+                ProcessarApi.processarCsvApi();
+            } else {
+                ProcessarApi.processarZipApi();
+            }
+        }
 
-        String arquivoOperadoras = "C:\\temp\\Relatorio_cadop.csv";
+        System.out.println("Cadastrando operadoras...");
+        List <String> arquivosProcessar = percorrerDadosBrutos("dados_brutos");
+        String arquivoOperadora = buscarArquivoOperadoras("dados_brutos");
+        Map<String, Operadora> operadoras = lerOperadora(arquivoOperadora);
+
         String dadosConsolidados = "consolidado_despesas.csv";
         String dadosAgregados = "despesas_agregadas.csv";
-        System.out.println("Cadastrando operadoras...");
-        Map<String, Operadora> operadoras = lerOperadora(arquivoOperadoras);
+
+        System.out.println("Consolidando e agregando despesas...");
+        for (String arquivo : arquivosProcessar) {
+            lerDespesas(operadoras, arquivo, Operadora.extrairTrimestre(arquivo));
+            registroConsolidado(operadoras, dadosConsolidados);
+            registroAgregado(operadoras, dadosAgregados);
+        }
+
+        System.out.println("Arquivos gerados com sucesso!");
+        System.out.println("Compactando arquivos...");
+
         String[] arquivosGerados = new String[3];
         arquivosGerados[0] = dadosConsolidados;
         arquivosGerados[1] = dadosAgregados;
 
-        System.out.println("Consolidando e agregando despesas...");
-        for (String caminho : caminhos) {
-            lerDespesas(operadoras, caminho, Operadora.extrairTrimestre(caminho));
-            registroConsolidado(operadoras, dadosConsolidados);
-            registroAgregado(operadoras, dadosAgregados);
-        }
-        System.out.println("Arquivos gerados com sucesso!");
-        System.out.println("Compactando arquivos...");
-
+        String[] caminhosFinais = new String[2];
+        caminhosFinais[0] = "consolidado_despesas.zip";
+        caminhosFinais[1] = "Teste_antonio.zip";
         for (int i=0; i < caminhosFinais.length; i++) {
             ProcessarZip.compactarParaZip(arquivosGerados[i], caminhosFinais[i]);
         }
-        System.out.println("Arquivo compactado com sucesso!");
+        System.out.println("Arquivos compactado com sucesso!");
+        System.out.println("Fim do programa!");
+    }
+
+    public static String buscarArquivoOperadoras(String pasta) {
+        try (Stream<Path> stream = Files.list(Path.of(pasta))) {
+            return stream
+                    .map(Path::toString)
+                    .filter(n -> n.contains("cadop") && n.endsWith(".csv"))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Arquivo de operadoras não encontrado!"));
+        } catch (IOException e) { throw new RuntimeException(e); }
+    }
+
+    public static List<String> percorrerDadosBrutos(String caminhoPasta) {
+        List<String> caminhosCsv = new ArrayList<>();
+        Path pasta = Path.of(caminhoPasta);
+
+        try (Stream<Path> stream = Files.list(pasta)) {
+            caminhosCsv = stream
+                    .filter(file -> !Files.isDirectory(file))
+                    .map(Path::toString)
+                    .filter(name -> name.toLowerCase().endsWith(".csv"))
+                    .filter(name -> !name.toLowerCase().contains("cadop"))
+                    .toList();
+
+        } catch (IOException e) {
+            throw new RuntimeException("Erro ao ler a pasta de dados: " + caminhoPasta, e);
+        }
+
+        return caminhosCsv;
     }
 
     public static Map <String, Operadora> lerOperadora(String arquivoOperadoras) {
@@ -165,5 +215,4 @@ public class Program {
             throw new DomainException("Não foi possível gravar as despesas agregadas!");
         }
     }
-
 }

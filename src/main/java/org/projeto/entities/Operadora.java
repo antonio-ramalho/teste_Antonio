@@ -129,7 +129,7 @@ public class Operadora {
     }
 
     public static int extrairTrimestre(String caminho) {
-        String trimestre = caminho.substring(8, 9);
+        String trimestre = caminho.substring(13, 14);
         return Integer.parseInt(trimestre);
     }
 
