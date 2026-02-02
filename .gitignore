@@ -12,6 +12,11 @@ target/
 *.iws
 *.iml
 *.ipr
+.consolidado_despesas.csv
+.despesas_agregadas.csv
+.consolidado_despesas.zip
+.Teste_antonio.zip
+.registroLog.csv
 
 ### Eclipse ###
 .apt_generated
