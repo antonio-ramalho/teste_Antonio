@@ -20,3 +20,5 @@ Orientações Gerais:
 
 - A partir dai o proximo passo foi ler as despesas, usando o registro ans como chave primaria a despesa consegue ser pareada com a empresa, depois disso tem um filtro para encontrar a despesa com eventos / sinistros, a partir disso é feito a validação dos dados, despesas negativas foram ignoradas, ao pesquisar descobri que elas provavelmente são glosas, ou seja, e um dinheiro que foi recebido, não uma despesa, o motivo de isso ter sido ignorado é por conta do total de despesas. O ano foi extraido da data
 
+![Fluxo de Dados](.diagrama.png)
+
