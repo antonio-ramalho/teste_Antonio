@@ -58,7 +58,7 @@ A maioria das inconsistências no que tange a operadora foi tratada na hora da l
 ## 2.2. Enriquecimento de Dados com Tratamento de Falhas
 
  - **Registros sem match no cadastro:** Nesse caso as despesas que não tinham um CNPJ no cadastro foram registrada no arquivo de log que foi comentado acima. Como o registro Ans é chave primaria, a comparação foi feita entre o registro Ans, que tinha sido armazenado junto com o CNPJ, e o registro ANS dos arquivos de despesas.
- -
+ 
  - **Trade-off técnico:** Como já explicado no tópico de armazenação de arquivos, os dados foram juntados através do **MAP**, que comparou a chave ANS de cada despesa capturada com a chave ANS que foi instanciada com o CNPJ, e ficou aquela estrutura de **dois MAP por operadora**. O primeiro beneficio disso é a **velocidade de processamento**, uma vez que usando a lista eu teria que percorrer o mesmo arquivo varias vezes enquanto que o MAP é quase instantâneo, outro beneficio é a **integridade dos dados**, já que a despesa é inserida diretamente na sua operadora correspondente, evitando inconsistências. O principal ponto negativo dessa abordagem é o **consumo de memória RAM,** mas como o volume dos dados nesse ponto já estava pequeno (depois dos filtros) essa abordagem se justifica. 
  
 
